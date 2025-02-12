@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./App.css";
 import { DiscSearch } from "./components/DiscSearch";
 import { DiscCollection } from "./components/DiscCollection";
@@ -6,9 +6,21 @@ import { DiscBag } from "./components/DiscBag";
 import { TabView } from "./components/TabView";
 import { UserDisc } from "./types/disc";
 
+const STORAGE_KEY = "disc-golf-collection";
+
 function App() {
-  const [collection, setCollection] = useState<UserDisc[]>([]);
+  const [collection, setCollection] = useState<UserDisc[]>(() => {
+    // Load initial state from localStorage
+    const savedCollection = localStorage.getItem(STORAGE_KEY);
+    return savedCollection ? JSON.parse(savedCollection) : [];
+  });
+
   const MAX_BAG_SIZE = 20;
+
+  // Save to localStorage whenever collection changes
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(collection));
+  }, [collection]);
 
   const handleAddDisc = (disc: UserDisc) => {
     setCollection((prev) => [...prev, disc]);
