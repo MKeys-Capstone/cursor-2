@@ -1,7 +1,7 @@
 import { UserDisc } from "../types/disc";
 
 const API_BASE_URL =
-  process.env.REACT_APP_API_URL ||
+  import.meta.env.VITE_APIG_URL ||
   "https://your-api-gateway-url.execute-api.region.amazonaws.com/prod";
 
 export const userDiscService = {

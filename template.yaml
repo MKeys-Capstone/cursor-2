@@ -1,26 +1,22 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: A simple SAM template for the Disc Collection App
+Description: Disc Golf Collection Manager API
 
-# Global settings
 Globals:
   Function:
-    Timeout: 10
+    Timeout: 30
+    Runtime: nodejs18.x
+    MemorySize: 256
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref DiscCollectionTable
+    CodeUri: src/functions/dist
 
 Resources:
-  # S3 Bucket to serve the React front-end
-  FrontendBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      WebsiteConfiguration:
-        IndexDocument: index.html
-        ErrorDocument: error.html
-
-  # DynamoDB Table for discs
-  DiscsTable:
+  DiscCollectionTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: DiscsTable
+      TableName: disc-collection
       AttributeDefinitions:
         - AttributeName: userId
           AttributeType: S
@@ -31,102 +27,93 @@ Resources:
           KeyType: HASH
         - AttributeName: discId
           KeyType: RANGE
-      ProvisionedThroughput:
-        ReadCapacityUnits: 5
-        WriteCapacityUnits: 5
+      BillingMode: PAY_PER_REQUEST
 
-  # Lambda function to get a user's discs
-  GetDiscsFunction:
+  DiscCollectionApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: "'*'"
+
+  GetCollectionFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: getDiscs.handler
-      Runtime: nodejs14.x
-      CodeUri: ./src
-      Environment:
-        Variables:
-          DISCS_TABLE: !Ref DiscsTable
+      Handler: getCollection.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref DiscCollectionTable
       Events:
-        Api:
+        GetCollection:
           Type: Api
           Properties:
-            Path: /discs/{userId}
+            RestApiId: !Ref DiscCollectionApi
+            Path: /collection
             Method: GET
-            RestApiId: !Ref ApiGateway
 
-  # Lambda function to add a new disc to user's collection
   AddDiscFunction:
     Type: AWS::Serverless::Function
     Properties:
       Handler: addDisc.handler
-      Runtime: nodejs14.x
-      CodeUri: ./src
-      Environment:
-        Variables:
-          DISCS_TABLE: !Ref DiscsTable
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref DiscCollectionTable
       Events:
-        Api:
+        AddDisc:
           Type: Api
           Properties:
-            Path: /discs/{userId}
+            RestApiId: !Ref DiscCollectionApi
+            Path: /collection
             Method: POST
-            RestApiId: !Ref ApiGateway
 
-  # Lambda function to update the active status of a disc
-  UpdateDiscStatusFunction:
+  UpdateDiscFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: updateDiscStatus.handler
-      Runtime: nodejs14.x
-      CodeUri: ./src
-      Environment:
-        Variables:
-          DISCS_TABLE: !Ref DiscsTable
+      Handler: updateDisc.handler
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref DiscCollectionTable
       Events:
-        Api:
+        UpdateDisc:
           Type: Api
           Properties:
-            Path: /discs/{userId}/{discId}
+            RestApiId: !Ref DiscCollectionApi
+            Path: /collection/{discId}
             Method: PUT
-            RestApiId: !Ref ApiGateway
 
-  # Lambda function to delete a disc from the user's collection
-  DeleteDiscFunction:
+  RemoveDiscFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: deleteDisc.handler
-      Runtime: nodejs14.x
-      CodeUri: ./src
-      Environment:
-        Variables:
-          DISCS_TABLE: !Ref DiscsTable
+      Handler: removeDisc.handler
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref DiscCollectionTable
       Events:
-        Api:
+        RemoveDisc:
           Type: Api
           Properties:
-            Path: /discs/{userId}/{discId}
+            RestApiId: !Ref DiscCollectionApi
+            Path: /collection/{discId}
             Method: DELETE
-            RestApiId: !Ref ApiGateway
 
-  # API Gateway to expose the Lambda functions
-  ApiGateway:
-    Type: AWS::ApiGateway::RestApi
+  ToggleDiscInBagFunction:
+    Type: AWS::Serverless::Function
     Properties:
-      Name: DiscCollectionApi
-      Description: API for managing the disc collection
-
-  # Deploy the React app using S3
-  ReactFrontendBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      WebsiteConfiguration:
-        IndexDocument: index.html
-        ErrorDocument: error.html
+      Handler: toggleDiscInBag.handler
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref DiscCollectionTable
+      Events:
+        ToggleDiscInBag:
+          Type: Api
+          Properties:
+            RestApiId: !Ref DiscCollectionApi
+            Path: /collection/{discId}/bag
+            Method: PUT
 
 Outputs:
-  ApiGatewayURL:
-    Description: "API Gateway URL"
-    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod"
-
-  FrontendURL:
-    Description: "Frontend URL"
-    Value: !Sub "http://${FrontendBucket}.s3-website-${AWS::Region}.amazonaws.com"
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${DiscCollectionApi}.execute-api.${AWS::Region}.amazonaws.com/prod"
