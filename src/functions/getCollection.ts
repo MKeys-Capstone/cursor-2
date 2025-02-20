@@ -6,9 +6,11 @@ const client = new DynamoDBClient({});
 
 export const handler: LambdaHandler = async (event) => {
   try {
-    const userId =
-      event.requestContext.authorizer?.claims?.sub || "default-user";
-
+    console.log("event", event);
+    const userId: any = { S: "default-user" };
+    // const sortKey: any = {"S":"discId"};
+    //  AND sortKey = :sortKey"
+    // ":sortKey": sortKey,
     const params = {
       TableName: process.env.TABLE_NAME!,
       KeyConditionExpression: "userId = :userId",
