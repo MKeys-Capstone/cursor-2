@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { UserDisc } from "../types/disc";
 import { Modal } from "./Modal";
+import { useDebounce } from "../hooks/useDebounce";
 
 interface DiscCollectionProps {
   discs: UserDisc[];
@@ -16,10 +17,23 @@ export const DiscCollection: React.FC<DiscCollectionProps> = ({
   onToggleInBag,
 }) => {
   const [selectedDisc, setSelectedDisc] = useState<UserDisc | null>(null);
+  const [localDisc, setLocalDisc] = useState<UserDisc | null>(null);
   const conditions = ["New", "Like New", "Good", "Fair", "Poor"];
+
+  // Update localDisc when selectedDisc changes or when the disc in the collection updates
+  useEffect(() => {
+    if (selectedDisc) {
+      const updatedDisc = discs.find((d) => d.discId === selectedDisc.discId);
+      if (updatedDisc) {
+        setLocalDisc(updatedDisc);
+        setSelectedDisc(updatedDisc);
+      }
+    }
+  }, [selectedDisc, discs]);
 
   const handleCloseModal = () => {
     setSelectedDisc(null);
+    setLocalDisc(null);
   };
 
   const handleItemClick = (disc: UserDisc, e: React.MouseEvent) => {
@@ -28,6 +42,34 @@ export const DiscCollection: React.FC<DiscCollectionProps> = ({
       return;
     }
     setSelectedDisc(disc);
+    setLocalDisc(disc);
+  };
+
+  // Debounce the notes update
+  const debouncedNotes = useDebounce(localDisc?.notes, 500);
+
+  // Effect to handle debounced notes update
+  useEffect(() => {
+    if (
+      localDisc &&
+      debouncedNotes !== undefined &&
+      debouncedNotes !== selectedDisc?.notes
+    ) {
+      onUpdateDisc(localDisc);
+    }
+  }, [debouncedNotes]);
+
+  const handleDiscUpdate = (updates: Partial<UserDisc>) => {
+    if (!localDisc) return;
+
+    const updatedDisc = { ...localDisc, ...updates };
+    setLocalDisc(updatedDisc);
+
+    // For immediate updates (condition and weight), update right away
+    if ("condition" in updates || "weight" in updates) {
+      onUpdateDisc(updatedDisc);
+    }
+    // Notes updates are handled by the debounce effect
   };
 
   return (
@@ -55,7 +97,7 @@ export const DiscCollection: React.FC<DiscCollectionProps> = ({
                 }}
                 className={disc.inBag ? "remove-from-bag" : "add-to-bag"}
               >
-                {disc.inBag ? "Remove from Bag" : "Add to Bag"}
+                {disc.inBag ? "Shelf it" : "Bag it"}
               </button>
             </div>
           </div>
@@ -63,29 +105,29 @@ export const DiscCollection: React.FC<DiscCollectionProps> = ({
       </div>
 
       <Modal
-        isOpen={selectedDisc !== null}
+        isOpen={selectedDisc !== null && localDisc !== null}
         onClose={handleCloseModal}
-        title={selectedDisc ? `${selectedDisc.name} Details` : ""}
+        title={localDisc ? `${localDisc.name} Details` : ""}
       >
-        {selectedDisc && (
+        {localDisc && (
           <div className="disc-details-modal">
-            {selectedDisc.image && (
-              <img src={selectedDisc.image} alt={selectedDisc.name} />
+            {localDisc.image && (
+              <img src={localDisc.image} alt={localDisc.name} />
             )}
             <div className="disc-info-section">
-              <h3>{selectedDisc.manufacturer}</h3>
+              <h3>{localDisc.manufacturer}</h3>
               <div className="flight-numbers-detail">
-                <div>Speed: {selectedDisc.speed}</div>
-                <div>Glide: {selectedDisc.glide}</div>
-                <div>Turn: {selectedDisc.turn}</div>
-                <div>Fade: {selectedDisc.fade}</div>
+                <div>Speed: {localDisc.speed}</div>
+                <div>Glide: {localDisc.glide}</div>
+                <div>Turn: {localDisc.turn}</div>
+                <div>Fade: {localDisc.fade}</div>
               </div>
             </div>
             <div className="disc-edit-section">
               <select
-                value={selectedDisc.condition}
+                value={localDisc.condition}
                 onChange={(e) =>
-                  onUpdateDisc({ ...selectedDisc, condition: e.target.value })
+                  handleDiscUpdate({ condition: e.target.value })
                 }
               >
                 {conditions.map((condition) => (
@@ -97,12 +139,9 @@ export const DiscCollection: React.FC<DiscCollectionProps> = ({
               <div className="weight-input">
                 <input
                   type="number"
-                  value={selectedDisc.weight}
+                  value={localDisc.weight}
                   onChange={(e) =>
-                    onUpdateDisc({
-                      ...selectedDisc,
-                      weight: Number(e.target.value),
-                    })
+                    handleDiscUpdate({ weight: Number(e.target.value) })
                   }
                   min="100"
                   max="200"
@@ -110,24 +149,20 @@ export const DiscCollection: React.FC<DiscCollectionProps> = ({
                 <span>g</span>
               </div>
               <textarea
-                value={selectedDisc.notes || ""}
-                onChange={(e) =>
-                  onUpdateDisc({ ...selectedDisc, notes: e.target.value })
-                }
+                value={localDisc.notes || ""}
+                onChange={(e) => handleDiscUpdate({ notes: e.target.value })}
                 placeholder="Add notes..."
               />
               <div className="modal-actions">
                 <button
-                  onClick={() => onToggleInBag(selectedDisc.discId)}
-                  className={
-                    selectedDisc.inBag ? "remove-from-bag" : "add-to-bag"
-                  }
+                  onClick={() => onToggleInBag(localDisc.discId)}
+                  className={localDisc.inBag ? "remove-from-bag" : "add-to-bag"}
                 >
-                  {selectedDisc.inBag ? "Remove from Bag" : "Add to Bag"}
+                  {localDisc.inBag ? "Remove from Bag" : "Add to Bag"}
                 </button>
                 <button
                   onClick={() => {
-                    onRemoveDisc(selectedDisc.discId);
+                    onRemoveDisc(localDisc.discId);
                     handleCloseModal();
                   }}
                   className="remove-disc"
