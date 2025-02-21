@@ -1,7 +1,10 @@
-import { DynamoDB } from "aws-sdk";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { LambdaHandler, createResponse } from "./types";
+import { DynamoDBDocumentClient, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 
-const dynamoDB = new DynamoDB.DocumentClient();
+const client = new DynamoDBClient({});
+const docClient = DynamoDBDocumentClient.from(client);
+
 const TABLE_NAME = process.env.TABLE_NAME!;
 
 export const handler: LambdaHandler = async (event) => {
@@ -15,15 +18,15 @@ export const handler: LambdaHandler = async (event) => {
       event.requestContext.authorizer?.claims?.sub || "default-user";
     const { discId } = event.pathParameters;
 
-    await dynamoDB
-      .delete({
-        TableName: TABLE_NAME,
-        Key: {
-          userId,
-          discId,
-        },
-      })
-      .promise();
+    const command = new DeleteCommand({
+      TableName: TABLE_NAME,
+      Key: {
+        userId,
+        discId,
+      },
+    });
+
+    await docClient.send(command);
 
     return createResponse(204, null);
   } catch (error) {
