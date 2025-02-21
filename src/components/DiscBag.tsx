@@ -58,14 +58,14 @@ export const DiscBag: React.FC<DiscBagProps> = ({
                 <div className="disc-list-info">
                   <span className="disc-name">{disc.name}</span>
                   <span className="manufacturer">({disc.manufacturer})</span>
+                  <div className="disc-list-details">
+                    {disc.weight}g • {disc.condition}
+                  </div>
                   <span className="flight-numbers">
                     {disc.speed}/{disc.glide}/{disc.turn}/{disc.fade}
                   </span>
                 </div>
                 <div className="disc-actions">
-                  <div className="disc-list-details">
-                    {disc.weight}g • {disc.condition}
-                  </div>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();

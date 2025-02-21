@@ -33,6 +33,7 @@ export const DiscSearch: React.FC<DiscSearchProps> = ({ onAddDisc }) => {
       condition: "New",
       weight: 175, // Default weight
       inBag: false,
+      color: "#FFFFFF", // Default to white
     };
     onAddDisc(userDisc);
   };

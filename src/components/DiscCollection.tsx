@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { UserDisc } from "../types/disc";
+import { UserDisc, DEFAULT_COLORS } from "../types/disc";
 import { Modal } from "./Modal";
 import { useDebounce } from "../hooks/useDebounce";
 
@@ -65,11 +65,24 @@ export const DiscCollection: React.FC<DiscCollectionProps> = ({
     const updatedDisc = { ...localDisc, ...updates };
     setLocalDisc(updatedDisc);
 
-    // For immediate updates (condition and weight), update right away
-    if ("condition" in updates || "weight" in updates) {
+    // For immediate updates (condition, weight, and color), update right away
+    if ("condition" in updates || "weight" in updates || "color" in updates) {
       onUpdateDisc(updatedDisc);
     }
     // Notes updates are handled by the debounce effect
+  };
+
+  const getContrastColor = (hexcolor: string) => {
+    // Convert hex to RGB
+    const r = parseInt(hexcolor.slice(1, 3), 16);
+    const g = parseInt(hexcolor.slice(3, 5), 16);
+    const b = parseInt(hexcolor.slice(5, 7), 16);
+
+    // Calculate relative luminance
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+    // Return black or white based on luminance
+    return luminance > 0.5 ? "#000000" : "#FFFFFF";
   };
 
   return (
@@ -82,9 +95,18 @@ export const DiscCollection: React.FC<DiscCollectionProps> = ({
             className={`disc-list-item ${disc.inBag ? "in-bag" : ""}`}
             onClick={(e) => handleItemClick(disc, e)}
           >
-            <div className="disc-list-info">
+            <div
+              className="disc-list-info"
+              style={{
+                backgroundColor: disc.color,
+                color: getContrastColor(disc.color),
+              }}
+            >
               <span className="disc-name">{disc.name}</span>
               <span className="manufacturer">({disc.manufacturer})</span>
+              <div className="disc-list-details">
+                {disc.weight}g • {disc.condition}
+              </div>
               <span className="flight-numbers">
                 {disc.speed}/{disc.glide}/{disc.turn}/{disc.fade}
               </span>
@@ -124,35 +146,72 @@ export const DiscCollection: React.FC<DiscCollectionProps> = ({
               </div>
             </div>
             <div className="disc-edit-section">
-              <select
-                value={localDisc.condition}
-                onChange={(e) =>
-                  handleDiscUpdate({ condition: e.target.value })
-                }
-              >
-                {conditions.map((condition) => (
-                  <option key={condition} value={condition}>
-                    {condition}
-                  </option>
-                ))}
-              </select>
-              <div className="weight-input">
-                <input
-                  type="number"
-                  value={localDisc.weight}
+              <div className="input-group">
+                <label>Condition:</label>
+                <select
+                  value={localDisc.condition}
                   onChange={(e) =>
-                    handleDiscUpdate({ weight: Number(e.target.value) })
+                    handleDiscUpdate({ condition: e.target.value })
                   }
-                  min="100"
-                  max="200"
-                />
-                <span>g</span>
+                >
+                  {conditions.map((condition) => (
+                    <option key={condition} value={condition}>
+                      {condition}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <textarea
-                value={localDisc.notes || ""}
-                onChange={(e) => handleDiscUpdate({ notes: e.target.value })}
-                placeholder="Add notes..."
-              />
+
+              <div className="input-group">
+                <label>Color:</label>
+                <div className="color-picker-container">
+                  <input
+                    type="color"
+                    value={localDisc.color}
+                    onChange={(e) =>
+                      handleDiscUpdate({ color: e.target.value })
+                    }
+                    className="color-picker"
+                  />
+                  <div className="default-colors">
+                    {DEFAULT_COLORS.map((color) => (
+                      <button
+                        key={color}
+                        className="color-preset"
+                        style={{ backgroundColor: color }}
+                        onClick={() => handleDiscUpdate({ color })}
+                        aria-label={`Set color to ${color}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="input-group">
+                <label>Weight:</label>
+                <div className="weight-input">
+                  <input
+                    type="number"
+                    value={localDisc.weight}
+                    onChange={(e) =>
+                      handleDiscUpdate({ weight: Number(e.target.value) })
+                    }
+                    min="100"
+                    max="200"
+                  />
+                  <span>g</span>
+                </div>
+              </div>
+
+              <div className="input-group">
+                <label>Notes:</label>
+                <textarea
+                  value={localDisc.notes || ""}
+                  onChange={(e) => handleDiscUpdate({ notes: e.target.value })}
+                  placeholder="Add notes..."
+                />
+              </div>
+
               <div className="modal-actions">
                 <button
                   onClick={() => onToggleInBag(localDisc.discId)}
