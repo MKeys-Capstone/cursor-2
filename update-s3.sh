@@ -26,3 +26,5 @@ echo "S3 Bucket ${REACT_APP_BUCKET} synced successfully."
 echo "Invalidating CloudFront Distribution..."
 aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DISTRIBUTION_ID --paths "/*"
 echo "CloudFront Distribution ${CLOUDFRONT_DISTRIBUTION_ID} invalidated successfully."
+
+echo "s3 and cloudfront updated successfully."
