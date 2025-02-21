@@ -18,10 +18,11 @@ fi
 echo "React app built successfully."
 
 #Sync S3 Bucket with built React app
-echo "Syncing S3 Bucket with built React app..."
+echo "Syncing S3 Bucket ${REACT_APP_BUCKET} with built React app..."
 aws s3 sync $BUILD_DIR s3://${REACT_APP_BUCKET}
+echo "S3 Bucket ${REACT_APP_BUCKET} synced successfully."
 
 # Invalidate CloudFront Distribution
 echo "Invalidating CloudFront Distribution..."
 aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DISTRIBUTION_ID --paths "/*"
-echo "CloudFront Distribution invalidated successfully."
+echo "CloudFront Distribution ${CLOUDFRONT_DISTRIBUTION_ID} invalidated successfully."
