@@ -55,9 +55,30 @@ export const DiscBag: React.FC<DiscBagProps> = ({
                 className="disc-list-item"
                 onClick={(e) => handleItemClick(disc, e)}
               >
-                <div className="disc-list-info">
+                <div
+                  className="disc-list-info"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "200px 30px 150px 150px 120px",
+                    gap: "16px",
+                    alignItems: "center",
+                    width: "100%",
+                  }}
+                >
                   <span className="disc-name">{disc.name}</span>
-                  <span className="manufacturer">({disc.manufacturer})</span>
+
+                  <div
+                    style={{
+                      backgroundColor: disc.color,
+                      width: "20px",
+                      height: "20px",
+                      borderRadius: "50%",
+                      border: "1px solid #ccc",
+                      flexShrink: 0,
+                    }}
+                  />
+
+                  <span className="manufacturer">{disc.manufacturer}</span>
                   <div className="disc-list-details">
                     {disc.weight}g • {disc.condition}
                   </div>

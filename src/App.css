@@ -124,6 +124,7 @@ header {
   border-bottom: 1px solid #eee;
   cursor: pointer;
   transition: background-color 0.2s;
+  gap: 16px;
 }
 
 .disc-list-item:last-child {
@@ -139,36 +140,41 @@ header {
 }
 
 .disc-list-info {
-  /* width: 100%; */
-  display: flex;
-  gap: 1rem;
   flex: 1;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px;
-  border-radius: 4px;
-  transition: background-color 0.3s ease;
-  margin-right: 1rem;
+  min-width: 0; /* Prevents grid from overflowing */
 }
 
 .disc-name {
   font-weight: 500;
   color: #444;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .manufacturer {
   color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .flight-numbers {
   color: #444;
-  font-weight: 800;
+  font-weight: 600;
   font-family: monospace;
+  white-space: nowrap;
 }
 
-.disc-list-details, .disc-list-status {
+.disc-list-details {
   color: #666;
   font-size: 0.9em;
+  white-space: nowrap;
+}
+
+.disc-actions {
+  flex-shrink: 0;
+  margin-left: 16px;
 }
 
 /* Modal Styles */
