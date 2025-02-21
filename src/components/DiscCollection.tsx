@@ -36,7 +36,7 @@ export const DiscCollection: React.FC<DiscCollectionProps> = ({
       <div className="disc-list">
         {discs.map((disc) => (
           <div
-            key={disc.id}
+            key={disc.discId}
             className={`disc-list-item ${disc.inBag ? "in-bag" : ""}`}
             onClick={(e) => handleItemClick(disc, e)}
           >
@@ -51,7 +51,7 @@ export const DiscCollection: React.FC<DiscCollectionProps> = ({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onToggleInBag(disc.id);
+                  onToggleInBag(disc.discId);
                 }}
                 className={disc.inBag ? "remove-from-bag" : "add-to-bag"}
               >
@@ -118,7 +118,7 @@ export const DiscCollection: React.FC<DiscCollectionProps> = ({
               />
               <div className="modal-actions">
                 <button
-                  onClick={() => onToggleInBag(selectedDisc.id)}
+                  onClick={() => onToggleInBag(selectedDisc.discId)}
                   className={
                     selectedDisc.inBag ? "remove-from-bag" : "add-to-bag"
                   }
@@ -127,7 +127,7 @@ export const DiscCollection: React.FC<DiscCollectionProps> = ({
                 </button>
                 <button
                   onClick={() => {
-                    onRemoveDisc(selectedDisc.id);
+                    onRemoveDisc(selectedDisc.discId);
                     handleCloseModal();
                   }}
                   className="remove-disc"

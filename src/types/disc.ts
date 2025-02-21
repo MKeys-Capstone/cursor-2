@@ -1,5 +1,5 @@
 export interface Disc {
-  id: string;
+  discId: string;
   name: string;
   manufacturer: string;
   category: string; // Putter, Midrange, Fairway Driver, Distance Driver

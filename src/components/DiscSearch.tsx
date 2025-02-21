@@ -55,7 +55,7 @@ export const DiscSearch: React.FC<DiscSearchProps> = ({ onAddDisc }) => {
 
       <div className="search-results-list">
         {searchResults.map((disc) => (
-          <div key={disc.id} className="search-result-item">
+          <div key={disc.discId} className="search-result-item">
             <div className="disc-info">
               <span className="disc-name">{disc.name}</span>&nbsp;
               <span className="manufacturer">({disc.manufacturer})</span>

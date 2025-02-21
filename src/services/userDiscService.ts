@@ -49,14 +49,17 @@ export const userDiscService = {
 
   async updateDisc(disc: UserDisc): Promise<UserDisc> {
     try {
-      const response = await fetch(`${API_BASE_URL}/collection/${disc.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          // Add authentication header if needed
-        },
-        body: JSON.stringify(disc),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/collection/${disc.discId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            // Add authentication header if needed
+          },
+          body: JSON.stringify(disc),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to update disc");

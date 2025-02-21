@@ -1,7 +1,9 @@
-import { DynamoDB } from "aws-sdk";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { LambdaHandler, createResponse, UserDisc } from "./types";
 
-const dynamoDB = new DynamoDB.DocumentClient();
+const client = new DynamoDBClient({});
+const docClient = DynamoDBDocumentClient.from(client);
 const TABLE_NAME = process.env.TABLE_NAME!;
 
 export const handler: LambdaHandler = async (event) => {
@@ -30,7 +32,7 @@ export const handler: LambdaHandler = async (event) => {
       expressionAttributeValues[`:${key}`] = value;
     });
 
-    const params = {
+    const command = new UpdateCommand({
       TableName: TABLE_NAME,
       Key: {
         userId,
@@ -40,9 +42,9 @@ export const handler: LambdaHandler = async (event) => {
       ExpressionAttributeNames: expressionAttributeNames,
       ExpressionAttributeValues: expressionAttributeValues,
       ReturnValues: "ALL_NEW",
-    };
+    });
 
-    const result = await dynamoDB.update(params).promise();
+    const result = await docClient.send(command);
     return createResponse(200, result.Attributes);
   } catch (error) {
     console.error("Error updating disc:", error);

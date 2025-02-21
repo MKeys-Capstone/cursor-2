@@ -1,11 +1,21 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
-
 import { LambdaHandler, createResponse, UserDisc } from "./types";
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 const TABLE_NAME = process.env.TABLE_NAME!;
+
+// Generate a random string ID
+const generateId = () => {
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  for (let i = 0; i < 21; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
 
 export const handler: LambdaHandler = async (event) => {
   try {
@@ -24,7 +34,7 @@ export const handler: LambdaHandler = async (event) => {
 
     const disc: UserDisc = {
       userId,
-      discId: discData.name,
+      discId: generateId(),
       ...discData,
     };
 

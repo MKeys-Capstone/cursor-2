@@ -47,7 +47,9 @@ function App() {
     try {
       const savedDisc = await userDiscService.updateDisc(updatedDisc);
       setCollection((prev) =>
-        prev.map((disc) => (disc.id === savedDisc.id ? savedDisc : disc))
+        prev.map((disc) =>
+          disc.discId === savedDisc.discId ? savedDisc : disc
+        )
       );
     } catch (err) {
       console.error("Error updating disc:", err);
@@ -58,7 +60,7 @@ function App() {
   const handleRemoveDisc = async (discId: string) => {
     try {
       await userDiscService.removeDisc(discId);
-      setCollection((prev) => prev.filter((disc) => disc.id !== discId));
+      setCollection((prev) => prev.filter((disc) => disc.discId !== discId));
     } catch (err) {
       console.error("Error removing disc:", err);
       alert("Failed to remove disc. Please try again.");
@@ -66,7 +68,7 @@ function App() {
   };
 
   const handleToggleInBag = async (discId: string) => {
-    const disc = collection.find((d) => d.id === discId);
+    const disc = collection.find((d) => d.discId === discId);
     if (!disc) return;
 
     const baggedDiscs = collection.filter((d) => d.inBag).length;
@@ -83,7 +85,7 @@ function App() {
         !disc.inBag
       );
       setCollection((prev) =>
-        prev.map((d) => (d.id === updatedDisc.id ? updatedDisc : d))
+        prev.map((d) => (d.discId === updatedDisc.discId ? updatedDisc : d))
       );
     } catch (err) {
       console.error("Error toggling disc bag status:", err);
