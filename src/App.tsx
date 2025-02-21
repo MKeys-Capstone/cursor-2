@@ -1,33 +1,43 @@
-import { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { AuthProvider } from "./auth/AuthContext";
+import { ProtectedRoute } from "./auth/ProtectedRoute";
+import { Login } from "./components/Login";
+import { configureAuth } from "./auth/AuthConfig";
 import "./App.css";
 import { DiscSearch } from "./components/DiscSearch";
 import { DiscCollection } from "./components/DiscCollection";
 import { DiscBag } from "./components/DiscBag";
 import { TabView } from "./components/TabView";
-import { UserDisc } from "./types/disc";
-import { userDiscService } from "./services/userDiscService";
+// import { UserDisc } from "./types/UserDisc";
+import { useUserDiscService } from "./services/userDiscService";
+import { UserDisc } from "./types/UserDisc";
 
-function App() {
+const App: React.FC = () => {
   const [collection, setCollection] = useState<UserDisc[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const MAX_BAG_SIZE = 20;
 
-  // Load collection on component mount
+  const discService = useUserDiscService();
+
   useEffect(() => {
+    configureAuth();
     loadCollection();
   }, []);
 
   const loadCollection = async () => {
     try {
-      setLoading(true);
-      const userCollection = await userDiscService.getUserCollection();
-
-      setCollection(userCollection);
+      const data = await discService.getCollection();
+      setCollection(data);
       setError(null);
     } catch (err) {
-      setError("Failed to load collection. Please try again later.");
-      console.error("Error loading collection:", err);
+      setError("Failed to load collection");
     } finally {
       setLoading(false);
     }
@@ -35,21 +45,19 @@ function App() {
 
   const handleAddDisc = async (disc: UserDisc) => {
     try {
-      const addedDisc = await userDiscService.addDisc(disc);
+      const addedDisc = await discService.addDisc(disc);
       setCollection((prev) => [...prev, addedDisc]);
+      setError(null);
     } catch (err) {
-      console.error("Error adding disc:", err);
-      alert("Failed to add disc. Please try again.");
+      setError("Failed to add disc");
     }
   };
 
   const handleUpdateDisc = async (updatedDisc: UserDisc) => {
     try {
-      const savedDisc = await userDiscService.updateDisc(updatedDisc);
+      const savedDisc = await discService.updateDisc(updatedDisc);
       setCollection((prev) =>
-        prev.map((disc) =>
-          disc.discId === savedDisc.discId ? savedDisc : disc
-        )
+        prev.map((disc) => (disc.id === savedDisc.id ? savedDisc : disc))
       );
     } catch (err) {
       console.error("Error updating disc:", err);
@@ -59,39 +67,31 @@ function App() {
 
   const handleRemoveDisc = async (discId: string) => {
     try {
-      await userDiscService.removeDisc(discId);
-      setCollection((prev) => prev.filter((disc) => disc.discId !== discId));
+      await discService.removeDisc(discId);
+      setCollection((prev) => prev.filter((disc) => disc.id !== discId));
+      setError(null);
     } catch (err) {
-      console.error("Error removing disc:", err);
-      alert("Failed to remove disc. Please try again.");
+      setError("Failed to remove disc");
     }
   };
 
   const handleToggleInBag = async (discId: string) => {
-    const disc = collection.find((d) => d.discId === discId);
-    if (!disc) return;
-
-    const baggedDiscs = collection.filter((d) => d.inBag).length;
-
-    // If trying to add to bag but it's full
-    if (!disc.inBag && baggedDiscs >= MAX_BAG_SIZE) {
-      alert("Your bag is full! Remove some discs first.");
-      return;
-    }
-
     try {
-      const updatedDisc = await userDiscService.toggleDiscInBag(
-        discId,
-        !disc.inBag
-      );
+      await discService.toggleInBag(discId);
       setCollection((prev) =>
-        prev.map((d) => (d.discId === updatedDisc.discId ? updatedDisc : d))
+        prev.map((disc) =>
+          disc.id === discId ? { ...disc, inBag: !disc.inBag } : disc
+        )
       );
+      setError(null);
     } catch (err) {
-      console.error("Error toggling disc bag status:", err);
-      alert("Failed to update disc bag status. Please try again.");
+      setError("Failed to update disc");
     }
   };
+
+  const bagged = collection.filter((d) => d.inBag).length;
+  const canAddToBag = bagged < MAX_BAG_SIZE;
+  const available = collection.filter((d) => !d.inBag).length;
 
   const tabs = [
     {
@@ -131,22 +131,43 @@ function App() {
   }
 
   return (
-    <div className="app">
-      <header>
-        <h1>Disc Golf Bag Manager</h1>
-      </header>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <div className="app">
+                  <header>
+                    <h1>Disc Golf Collection Manager</h1>
+                    {error && <div className="error">{error}</div>}
+                    <div className="stats">
+                      <span>
+                        In Bag: {bagged}/{MAX_BAG_SIZE}
+                      </span>
+                      <span>Available: {available}</span>
+                    </div>
+                  </header>
+                  <main>
+                    <div className="search-section">
+                      <DiscSearch onAddDisc={handleAddDisc} />
+                    </div>
 
-      <main>
-        <div className="search-section">
-          <DiscSearch onAddDisc={handleAddDisc} />
-        </div>
-
-        <div className="content-section">
-          <TabView tabs={tabs} />
-        </div>
-      </main>
-    </div>
+                    <div className="content-section">
+                      <TabView tabs={tabs} />
+                    </div>
+                  </main>
+                </div>
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
-}
+};
 
 export default App;
