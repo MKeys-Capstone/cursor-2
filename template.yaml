@@ -1,0 +1,174 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Disc Golf Collection Manager API
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: nodejs18.x
+    MemorySize: 256
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref DiscCollectionTable
+    CodeUri: src/functions/dist
+
+Resources:
+  ReactAppBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::StackName}--practice-react-app"
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        RestrictPublicBuckets: false
+        IgnorePublicAcls: false
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerPreferred
+
+  ReactAppBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ReactAppBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Principal: "*"
+            Action: "s3:GetObject"
+            Resource: !Sub "arn:aws:s3:::${ReactAppBucket}/*"
+
+  ReactCloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - DomainName: !Sub "${ReactAppBucket}.s3-website-${AWS::Region}.amazonaws.com"
+            Id: ReactS3Origin
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginProtocolPolicy: http-only
+        Enabled: true
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          TargetOriginId: ReactS3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: ["GET", "HEAD"]
+          CachedMethods: ["GET", "HEAD"]
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+        PriceClass: PriceClass_100
+        HttpVersion: http2
+        IPV6Enabled: true
+
+  DiscCollectionTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: disc-collection
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: discId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: discId
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+
+  DiscCollectionApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: "'*'"
+
+  GetCollectionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: getCollection.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref DiscCollectionTable
+      Events:
+        GetCollection:
+          Type: Api
+          Properties:
+            RestApiId: !Ref DiscCollectionApi
+            Path: /collection
+            Method: GET
+
+  AddDiscFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: addDisc.handler
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref DiscCollectionTable
+      Events:
+        AddDisc:
+          Type: Api
+          Properties:
+            RestApiId: !Ref DiscCollectionApi
+            Path: /collection
+            Method: POST
+
+  UpdateDiscFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: updateDisc.handler
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref DiscCollectionTable
+      Events:
+        UpdateDisc:
+          Type: Api
+          Properties:
+            RestApiId: !Ref DiscCollectionApi
+            Path: /collection/{discId}
+            Method: PUT
+
+  RemoveDiscFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: removeDisc.handler
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref DiscCollectionTable
+      Events:
+        RemoveDisc:
+          Type: Api
+          Properties:
+            RestApiId: !Ref DiscCollectionApi
+            Path: /collection/{discId}
+            Method: DELETE
+
+  ToggleDiscInBagFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: toggleDiscInBag.handler
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref DiscCollectionTable
+      Events:
+        ToggleDiscInBag:
+          Type: Api
+          Properties:
+            RestApiId: !Ref DiscCollectionApi
+            Path: /collection/{discId}/bag
+            Method: PUT
+
+Outputs:
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${DiscCollectionApi}.execute-api.${AWS::Region}.amazonaws.com/prod"

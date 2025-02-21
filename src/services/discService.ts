@@ -17,7 +17,7 @@ interface DiscItResponse {
 }
 
 const mapDiscItResponseToDisc = (disc: DiscItResponse): Disc => ({
-  id: disc.id,
+  discId: disc.id,
   name: disc.name,
   manufacturer: disc.brand,
   category: disc.category,

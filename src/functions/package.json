@@ -1,0 +1,25 @@
+{
+  "name": "disc-collection-api",
+  "version": "1.0.0",
+  "description": "Lambda functions for disc collection API",
+  "main": "index.js",
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "npm run clean && tsc",
+    "prebuild": "npm install",
+    "test": "jest",
+    "predeploy": "npm run build",
+    "deploy": "sam build && sam deploy"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.751.0",
+    "aws-sdk": "^2.1450.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.119",
+    "@types/node": "^18.17.5",
+    "@types/uuid": "^9.0.2",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.1.6"
+  }
+}

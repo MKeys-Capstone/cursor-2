@@ -51,25 +51,46 @@ export const DiscBag: React.FC<DiscBagProps> = ({
           <div className="disc-list">
             {discs.map((disc) => (
               <div
-                key={disc.id}
+                key={disc.discId}
                 className="disc-list-item"
                 onClick={(e) => handleItemClick(disc, e)}
               >
-                <div className="disc-list-info">
+                <div
+                  className="disc-list-info"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "200px 30px 150px 150px 120px",
+                    gap: "16px",
+                    alignItems: "center",
+                    width: "100%",
+                  }}
+                >
                   <span className="disc-name">{disc.name}</span>
-                  <span className="manufacturer">({disc.manufacturer})</span>
+
+                  <div
+                    style={{
+                      backgroundColor: disc.color,
+                      width: "20px",
+                      height: "20px",
+                      borderRadius: "50%",
+                      border: "1px solid #ccc",
+                      flexShrink: 0,
+                    }}
+                  />
+
+                  <span className="manufacturer">{disc.manufacturer}</span>
+                  <div className="disc-list-details">
+                    {disc.weight}g • {disc.condition}
+                  </div>
                   <span className="flight-numbers">
                     {disc.speed}/{disc.glide}/{disc.turn}/{disc.fade}
                   </span>
                 </div>
                 <div className="disc-actions">
-                  <div className="disc-list-details">
-                    {disc.weight}g • {disc.condition}
-                  </div>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      onRemoveFromBag(disc.id);
+                      onRemoveFromBag(disc.discId);
                     }}
                     className="remove-from-bag"
                   >
@@ -117,7 +138,7 @@ export const DiscBag: React.FC<DiscBagProps> = ({
             <div className="modal-actions">
               <button
                 onClick={() => {
-                  onRemoveFromBag(selectedDisc.id);
+                  onRemoveFromBag(selectedDisc.discId);
                   handleCloseModal();
                 }}
                 className="remove-from-bag"

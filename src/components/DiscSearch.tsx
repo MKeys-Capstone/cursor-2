@@ -33,6 +33,7 @@ export const DiscSearch: React.FC<DiscSearchProps> = ({ onAddDisc }) => {
       condition: "New",
       weight: 175, // Default weight
       inBag: false,
+      color: "#FFFFFF", // Default to white
     };
     onAddDisc(userDisc);
   };
@@ -55,11 +56,14 @@ export const DiscSearch: React.FC<DiscSearchProps> = ({ onAddDisc }) => {
 
       <div className="search-results-list">
         {searchResults.map((disc) => (
-          <div key={disc.id} className="search-result-item">
+          <div key={disc.discId} className="search-result-item">
             <div className="disc-info">
               <span className="disc-name">{disc.name}</span>&nbsp;
               <span className="manufacturer">({disc.manufacturer})</span>
-              <span className="flight-numbers">
+              <span
+                className="flight-numbers"
+                style={{ marginLeft: "30px", color: "lightgray" }}
+              >
                 Speed: {disc.speed} | Glide: {disc.glide} | Turn: {disc.turn} |
                 Fade: {disc.fade}
               </span>

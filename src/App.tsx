@@ -5,52 +5,92 @@ import { DiscCollection } from "./components/DiscCollection";
 import { DiscBag } from "./components/DiscBag";
 import { TabView } from "./components/TabView";
 import { UserDisc } from "./types/disc";
-
-const STORAGE_KEY = "disc-golf-collection";
+import { userDiscService } from "./services/userDiscService";
 
 function App() {
-  const [collection, setCollection] = useState<UserDisc[]>(() => {
-    // Load initial state from localStorage
-    const savedCollection = localStorage.getItem(STORAGE_KEY);
-    return savedCollection ? JSON.parse(savedCollection) : [];
-  });
-
+  const [collection, setCollection] = useState<UserDisc[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const MAX_BAG_SIZE = 20;
 
-  // Save to localStorage whenever collection changes
+  // Load collection on component mount
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(collection));
-  }, [collection]);
+    loadCollection();
+  }, []);
 
-  const handleAddDisc = (disc: UserDisc) => {
-    setCollection((prev) => [...prev, disc]);
+  const loadCollection = async () => {
+    try {
+      setLoading(true);
+      const userCollection = await userDiscService.getUserCollection();
+
+      setCollection(userCollection);
+      setError(null);
+    } catch (err) {
+      setError("Failed to load collection. Please try again later.");
+      console.error("Error loading collection:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleUpdateDisc = (updatedDisc: UserDisc) => {
-    setCollection((prev) =>
-      prev.map((disc) => (disc.id === updatedDisc.id ? updatedDisc : disc))
-    );
+  const handleAddDisc = async (disc: UserDisc) => {
+    try {
+      const addedDisc = await userDiscService.addDisc(disc);
+      setCollection((prev) => [...prev, addedDisc]);
+    } catch (err) {
+      console.error("Error adding disc:", err);
+      alert("Failed to add disc. Please try again.");
+    }
   };
 
-  const handleRemoveDisc = (discId: string) => {
-    setCollection((prev) => prev.filter((disc) => disc.id !== discId));
+  const handleUpdateDisc = async (updatedDisc: UserDisc) => {
+    try {
+      const savedDisc = await userDiscService.updateDisc(updatedDisc);
+      setCollection((prev) =>
+        prev.map((disc) =>
+          disc.discId === savedDisc.discId ? savedDisc : disc
+        )
+      );
+    } catch (err) {
+      console.error("Error updating disc:", err);
+      alert("Failed to update disc. Please try again.");
+    }
   };
 
-  const handleToggleInBag = (discId: string) => {
-    setCollection((prev) => {
-      const baggedDiscs = prev.filter((d) => d.inBag).length;
-      const disc = prev.find((d) => d.id === discId);
+  const handleRemoveDisc = async (discId: string) => {
+    try {
+      await userDiscService.removeDisc(discId);
+      setCollection((prev) => prev.filter((disc) => disc.discId !== discId));
+    } catch (err) {
+      console.error("Error removing disc:", err);
+      alert("Failed to remove disc. Please try again.");
+    }
+  };
 
-      if (!disc) return prev;
+  const handleToggleInBag = async (discId: string) => {
+    const disc = collection.find((d) => d.discId === discId);
+    if (!disc) return;
 
-      // If trying to add to bag but it's full
-      if (!disc.inBag && baggedDiscs >= MAX_BAG_SIZE) {
-        alert("Your bag is full! Remove some discs first.");
-        return prev;
-      }
+    const baggedDiscs = collection.filter((d) => d.inBag).length;
 
-      return prev.map((d) => (d.id === discId ? { ...d, inBag: !d.inBag } : d));
-    });
+    // If trying to add to bag but it's full
+    if (!disc.inBag && baggedDiscs >= MAX_BAG_SIZE) {
+      alert("Your bag is full! Remove some discs first.");
+      return;
+    }
+
+    try {
+      const updatedDisc = await userDiscService.toggleDiscInBag(
+        discId,
+        !disc.inBag
+      );
+      setCollection((prev) =>
+        prev.map((d) => (d.discId === updatedDisc.discId ? updatedDisc : d))
+      );
+    } catch (err) {
+      console.error("Error toggling disc bag status:", err);
+      alert("Failed to update disc bag status. Please try again.");
+    }
   };
 
   const tabs = [
@@ -76,6 +116,19 @@ function App() {
       ),
     },
   ];
+
+  if (loading) {
+    return <div className="loading">Loading your collection...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="error">
+        <p>{error}</p>
+        <button onClick={loadCollection}>Try Again</button>
+      </div>
+    );
+  }
 
   return (
     <div className="app">
