@@ -1,8 +1,10 @@
-import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 
 import { LambdaHandler, createResponse, UserDisc } from "./types";
 
-const dynamoDB = new DynamoDBClient({});
+const client = new DynamoDBClient({});
+const docClient = DynamoDBDocumentClient.from(client);
 const TABLE_NAME = process.env.TABLE_NAME!;
 
 export const handler: LambdaHandler = async (event) => {
@@ -26,27 +28,17 @@ export const handler: LambdaHandler = async (event) => {
       ...discData,
     };
 
-    const command = new PutItemCommand({
+    const command = new PutCommand({
       TableName: TABLE_NAME,
       Item: {
-        userId: { S: disc.userId },
-        discId: { S: disc.name },
-        name: { S: disc.name },
-        manufacturer: { S: disc.manufacturer },
-        category: { S: disc.category },
-        speed: { N: disc.speed.toString() },
-        glide: { N: disc.glide.toString() },
-        turn: { N: disc.turn.toString() },
-        fade: { N: disc.fade.toString() },
-        condition: { S: disc.condition },
-        weight: { N: disc.weight.toString() },
-        inBag: { BOOL: disc.inBag },
-        ...(disc.image && { image: { S: disc.image } }),
-        ...(disc.notes && { notes: { S: disc.notes } }),
+        ...disc,
+        // Ensure optional fields are only included if they exist
+        ...(disc.image && { image: disc.image }),
+        ...(disc.notes && { notes: disc.notes }),
       },
     });
 
-    await dynamoDB.send(command);
+    await docClient.send(command);
 
     return createResponse(201, disc);
   } catch (error) {

@@ -34,7 +34,7 @@ export const DiscCollection: React.FC<DiscCollectionProps> = ({
     <div className="disc-collection">
       <h2>My Collection</h2>
       <div className="disc-list">
-        {discs.map((disc) => (
+        {/* {discs.map((disc) => (
           <div
             key={disc.id}
             className={`disc-list-item ${disc.inBag ? "in-bag" : ""}`}
@@ -59,7 +59,7 @@ export const DiscCollection: React.FC<DiscCollectionProps> = ({
               </button>
             </div>
           </div>
-        ))}
+        ))} */}
       </div>
 
       <Modal

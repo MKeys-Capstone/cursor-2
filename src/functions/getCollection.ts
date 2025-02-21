@@ -1,13 +1,15 @@
-import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { createResponse, LambdaHandler } from "./types";
-
+import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
 // DynamoDB client
 const client = new DynamoDBClient({});
+
+const docClient = DynamoDBDocumentClient.from(client);
 
 export const handler: LambdaHandler = async (event) => {
   try {
     console.log("event", event);
-    const userId: any = { S: "default-user" };
+    const userId: any = "default-user";
 
     const params = {
       TableName: process.env.TABLE_NAME!,
@@ -18,7 +20,7 @@ export const handler: LambdaHandler = async (event) => {
     };
 
     const command = new QueryCommand(params);
-    const result = await client.send(command);
+    const result = await docClient.send(command);
 
     return createResponse(200, result.Items);
   } catch (error) {

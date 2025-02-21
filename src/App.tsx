@@ -22,6 +22,7 @@ function App() {
     try {
       setLoading(true);
       const userCollection = await userDiscService.getUserCollection();
+
       setCollection(userCollection);
       setError(null);
     } catch (err) {
